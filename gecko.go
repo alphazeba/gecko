@@ -27,6 +27,19 @@ type FileDetails struct {
 	Header []string
 }
 
+func (fd FileDetails) getFile() string {
+	const outputVar = "OUTPUT"
+	if strings.HasPrefix(fd.File, fmt.Sprintf("$%s", outputVar)) {
+		outputDir, envVarPresent := os.LookupEnv(outputVar)
+		if !envVarPresent {
+			fmt.Printf("env var %s has not been set, defaulting to Output\n", outputVar)
+			outputDir = "Output"
+		}
+		return outputDir + fd.File[len(outputVar)+1:]
+	}
+	return fd.File
+}
+
 type CodeDescription struct {
 	Name        string
 	Authors     []string
@@ -720,9 +733,6 @@ func generateBinaryLines(file string) []string {
 }
 
 func confirmAssembler() {
-	const asCmdLinux string = "powerpc-eabi-as"
-	const objcopyCmdLinux string = "powerpc-eabi-objcopy"
-
 	// Try user's default $PATH
 	_, aserr := exec.LookPath(asCmdLinux)
 	_, objcopyerr := exec.LookPath(objcopyCmdLinux)
@@ -745,8 +755,8 @@ func confirmAssembler() {
 }
 
 func writeOutput(details FileDetails) {
-	fmt.Printf("Writing to %s...\n", details.File)
-	ext := filepath.Ext(details.File)
+	fmt.Printf("Writing to %s...\n", details.getFile())
+	ext := filepath.Ext(details.getFile())
 	switch ext {
 	case ".gct":
 		writeGctOutput(details)
@@ -756,13 +766,13 @@ func writeOutput(details FileDetails) {
 		writeTextOutput(details)
 	}
 
-	fmt.Printf("Successfuly wrote codes to %s\n", details.File)
+	fmt.Printf("Successfuly wrote codes to %s\n", details.getFile())
 }
 
 func writeTextOutput(details FileDetails) {
 	outputWithHeader := append(details.Header, output...)
 	fullText := strings.Join(outputWithHeader, "\n")
-	writeFile(details.File, []byte(fullText))
+	writeFile(details.getFile(), []byte(fullText))
 }
 
 func writeGctOutput(details FileDetails) {
@@ -772,13 +782,13 @@ func writeGctOutput(details FileDetails) {
 	gctBytes = append(gctBytes, outputBytes...)
 
 	gctBytes = append(gctBytes, 0xF0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00)
-	writeFile(details.File, gctBytes)
+	writeFile(details.getFile(), gctBytes)
 }
 
 func writeBinOutput(details FileDetails) {
 	outputBytes := convertLinesToBinary(output)
 
-	writeFile(details.File, outputBytes)
+	writeFile(details.getFile(), outputBytes)
 }
 
 func convertLinesToBinary(lines []string) []byte {

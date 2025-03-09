@@ -45,9 +45,6 @@ type compileJob struct {
 }
 
 func execBatchCompile(jobs []compileJob) {
-	const asCmdLinux string = "powerpc-eabi-as"
-	const objcopyCmdLinux string = "powerpc-eabi-objcopy"
-
 	deleteFile := func(fp string) {
 		defer compileWaitGroup.Done()
 		os.Remove(fp)
@@ -181,9 +178,6 @@ func compile(file, addressExp string) ([]byte, string) {
 	buildTempAsmFile(file, addressExp, compileFilePath, "")
 
 	fileDir := filepath.Dir(file)
-
-	const asCmdLinux string = "powerpc-eabi-as"
-	const objcopyCmdLinux string = "powerpc-eabi-objcopy"
 
 	// Set base args
 	args := []string{"-a32", "-mbig", "-mregnames", "-mgekko"}
